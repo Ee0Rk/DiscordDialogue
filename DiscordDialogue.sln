@@ -1,0 +1,39 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.6.33815.320
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DiscordDialogue", "DiscordDialogue\DiscordDialogue.csproj", "{75D7CB68-2613-4FD2-9955-503938F1C98E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DiscordDialogoueTrainer", "DiscordDialogoueTrainer\DiscordDialogoueTrainer.csproj", "{BB329AB6-29F0-45E2-9E30-2AB5781836C1}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{B01B46CA-F9E8-467E-B372-03490A995D98}"
+	ProjectSection(SolutionItems) = preProject
+		trainer\input.txt = trainer\input.txt
+		trainer\output.txt = trainer\output.txt
+		trainer\run.bat = trainer\run.bat
+		trainer\trainer.py = trainer\trainer.py
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{75D7CB68-2613-4FD2-9955-503938F1C98E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{75D7CB68-2613-4FD2-9955-503938F1C98E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{75D7CB68-2613-4FD2-9955-503938F1C98E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{75D7CB68-2613-4FD2-9955-503938F1C98E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BB329AB6-29F0-45E2-9E30-2AB5781836C1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BB329AB6-29F0-45E2-9E30-2AB5781836C1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BB329AB6-29F0-45E2-9E30-2AB5781836C1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BB329AB6-29F0-45E2-9E30-2AB5781836C1}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {BAFEE218-CF90-4D51-A868-825068A86D55}
+	EndGlobalSection
+EndGlobal

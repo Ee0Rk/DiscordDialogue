@@ -396,3 +396,10 @@ FodyWeavers.xsd
 
 # JetBrains Rider
 *.sln.iml
+trainer/input.txt
+trainer/output.txt
+trainer/run.bat
+trainer/trainer.py
+DiscordDialogoueTrainer/input.txt
+DiscordDialogoueTrainer/output.txt
+*.txt
