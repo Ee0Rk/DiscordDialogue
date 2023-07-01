@@ -186,7 +186,7 @@ namespace DiscordDialogoueTrainer
                 {
                     if (word.type == 1)
                     {
-                        string str = $"{word.text}~";
+                        string str = $"{word.text}({word.unique})~";
                         foreach (pointer pntr in word.pointers)
                         {
                             str += $">{pntr.target}^{pntr.wheight}";
@@ -195,7 +195,7 @@ namespace DiscordDialogoueTrainer
                     }
                     if (word.type == 0)
                     {
-                        string str = $"{word.text}";
+                        string str = $"{word.text}({word.unique})";
                         foreach (pointer pntr in word.pointers)
                         {
                             str += $">{pntr.target}^{pntr.wheight}";
@@ -204,7 +204,7 @@ namespace DiscordDialogoueTrainer
                     }
                     if (word.type == 2)
                     {
-                        string str = $"{word.text}<";
+                        string str = $"{word.text}({word.unique})<";
                         outputLines.Add(str);
                     }
                 }

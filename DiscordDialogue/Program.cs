@@ -8,9 +8,13 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using System.Diagnostics;
 using System.Threading;
 using Microsoft.Extensions.DependencyInjection;
 using System.Windows.Forms;
+
+// 8-15 words per sentence
+// <@1124775606157058098>
 
 namespace DiscordDialogue
 {
@@ -20,6 +24,7 @@ namespace DiscordDialogue
 
         private DiscordSocketClient _client;
         private CommandService _commands;
+        Random rand = new Random(69420);
 
         public static void Main(string[] args)
             => new Program().RunBotAsync().GetAwaiter().GetResult();
@@ -37,8 +42,22 @@ namespace DiscordDialogue
             await Task.Delay(-1);
         }
 
-        private Task MessageReceived()
+        private Task MessageReceived(SocketMessage msg)
         {
+            if (msg.Content.Contains("<@1124775606157058098>"))
+            {
+                #region god help me for what comes next
+                Stopwatch stopw = new Stopwatch();
+                stopw.Start();
+                var message = msg as SocketUserMessage;
+                string finishedMessage = "";
+
+
+                stopw.Stop();
+                finishedMessage += $"\n||Generated in: {stopw.ElapsedMilliseconds}MS||";
+                message.ReplyAsync(finishedMessage);
+                #endregion
+            }
             return Task.CompletedTask;
         }
 
