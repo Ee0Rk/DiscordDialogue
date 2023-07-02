@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Text.RegularExpressions;
+using System.Diagnostics.Eventing.Reader;
 
 namespace DiscordDialogue
 {
@@ -51,6 +52,7 @@ namespace DiscordDialogue
         public ulong unique = ulong.MaxValue;
         public List<pointer> pointers = new List<pointer>();
         public int type = 0;
+        public int wheight = 0;
         // 0 normal; 1 beginning; 2 end
         public word(string text, ulong unique)
         {
@@ -77,6 +79,7 @@ namespace DiscordDialogue
             {
                 this.pointers[exists].wheight++;
             }
+            this.wheight = this.pointers.Count;
         }
         public override string ToString()
         {
@@ -91,7 +94,7 @@ namespace DiscordDialogue
     #endregion
     public class util
     {
-        public string[] train(string[] data)
+        public string[] train(string[] data/*, string[] replace*/)
         {
             List<string> output = new List<string>();
             char[] delimitors = { ' ', '-' };
@@ -105,6 +108,7 @@ namespace DiscordDialogue
                     words.Add(new word(_word, keyGen.Next()));
                 }
             }
+
             var duplicates = words
                 .GroupBy(item => item.text)
                 .Where(group => group.Count() > 1)
@@ -112,6 +116,7 @@ namespace DiscordDialogue
                 .ToList();
             foreach (var duplicate in duplicates)
             { words.Remove(duplicate); }
+
             foreach (string line in data)
             {
                 string[] _w = line.Split(delimitors);
@@ -144,29 +149,32 @@ namespace DiscordDialogue
                     }
                 }
             }
+
             foreach (var word in words)
             {
                 if (word.type == 1)
                 {
-                    string str = $"{word.text}~";
+                    string str = $"[{word.text}({word.unique})~";
                     foreach (pointer pntr in word.pointers)
                     {
                         str += $">{pntr.target}^{pntr.wheight}";
                     }
+                    str += "]";
                     output.Add(str);
                 }
                 if (word.type == 0)
                 {
-                    string str = $"{word.text}";
+                    string str = $"[{word.text}({word.unique})";
                     foreach (pointer pntr in word.pointers)
                     {
                         str += $">{pntr.target}^{pntr.wheight}";
                     }
+                    str += "]";
                     output.Add(str);
                 }
                 if (word.type == 2)
                 {
-                    string str = $"{word.text}<";
+                    string str = $"[{word.text}({word.unique})<]";
                     output.Add(str);
                 }
             }
@@ -227,7 +235,49 @@ namespace DiscordDialogue
         }
         public word[] serialize(string[] data)
         {
-            return new word[1];
+            List<word> output = new List<word>();
+
+            foreach (string line in data)
+            {
+                bool isReading = false;
+                bool isUnique = false;
+                bool isWheight = false;
+                bool isPointer = false;
+
+                int type = -1;
+
+                string unique = "";
+                List<string> pointerUnique = new List<string>();
+                List<string> pointerWheight = new List<string>();
+
+                for (int i = 0; i < line.Length; i++)
+                {
+                    char c = line[i];
+
+                    if (c == '<')
+                    { type = 2; break; }
+                    else if (c == '~')
+                    { type = 1; continue; }
+                    else if (c == '[')
+                    {isReading = true;}
+                    else if (c == ']')
+                    {isReading = false; }
+                    else if (c == '(')
+                    { isUnique = true; isReading = false; }
+                    else if (c == ')')
+                    { isUnique = false; isReading = false; }
+                    else if (c == '>')
+                    { isPointer = true; isReading = false; }
+                    else if (c == '^')
+                    { isWheight = true; isPointer = false; }
+                    else
+                    {
+
+                    }
+                }
+            }
+
+            return output.ToArray();
         }
     }
 }

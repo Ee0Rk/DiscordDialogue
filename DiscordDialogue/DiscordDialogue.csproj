@@ -113,11 +113,21 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="data\global\" />
+    <Folder Include="data\guilds\" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="data\guilds\1096111048228085921\dataset.txt" />
-    <Content Include="data\guilds\guilds.txt" />
+    <Content Include="data\banWords.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="data\global\globalDataset.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="data\global\globalSentances.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="data\replace.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
     <Content Include="data\token.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>

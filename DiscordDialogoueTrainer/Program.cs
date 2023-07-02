@@ -109,6 +109,7 @@ namespace DiscordDialogoueTrainer
         #region variables
         static char[] delimitors = { ' ', '-' };
 
+        static string[] banWords;
         static string[] inputLines = new string[1];
         static List<string> outputLines = new List<string>();
 
@@ -122,6 +123,7 @@ namespace DiscordDialogoueTrainer
 
         static void Main(string[] args)
         {
+            banWords = File.ReadAllLines(@"data\banWords.txt");
             while (true)
             {
                 stopw.Start();
@@ -186,25 +188,27 @@ namespace DiscordDialogoueTrainer
                 {
                     if (word.type == 1)
                     {
-                        string str = $"{word.text}({word.unique})~";
+                        string str = $"[{word.text}({word.unique})~";
                         foreach (pointer pntr in word.pointers)
                         {
                             str += $">{pntr.target}^{pntr.wheight}";
                         }
+                        str += "]";
                         outputLines.Add(str);
                     }
                     if (word.type == 0)
                     {
-                        string str = $"{word.text}({word.unique})";
+                        string str = $"[{word.text}({word.unique})";
                         foreach (pointer pntr in word.pointers)
                         {
                             str += $">{pntr.target}^{pntr.wheight}";
                         }
+                        str += "]";
                         outputLines.Add(str);
                     }
                     if (word.type == 2)
                     {
-                        string str = $"{word.text}({word.unique})<";
+                        string str = $"[{word.text}({word.unique})<]";
                         outputLines.Add(str);
                     }
                 }

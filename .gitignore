@@ -402,4 +402,4 @@ trainer/run.bat
 trainer/trainer.py
 DiscordDialogoueTrainer/input.txt
 DiscordDialogoueTrainer/output.txt
-*.txt
+DiscordDialogue/data/token.txt
