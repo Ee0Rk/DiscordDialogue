@@ -123,7 +123,7 @@ namespace DiscordDialogoueTrainer
 
         static void Main(string[] args)
         {
-            banWords = File.ReadAllLines(@"data\banWords.txt");
+            //banWords = File.ReadAllLines(@"data\banWords.txt");
             while (true)
             {
                 stopw.Start();

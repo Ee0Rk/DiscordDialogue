@@ -12,6 +12,7 @@ using System.Diagnostics;
 using System.Threading;
 using Microsoft.Extensions.DependencyInjection;
 using System.Windows.Forms;
+using System.Net;
 
 // 8-15 words per sentence
 // <@1124775606157058098>
@@ -30,6 +31,10 @@ namespace DiscordDialogue
         public static void Main(string[] args)
             => new Program().RunBotAsync().GetAwaiter().GetResult();
 
+        static double ConvertBytesToMegabytes(long bytes)
+        {
+            return Math.Round((bytes / 1024f) / 1024f);
+        }
         private Task Log(LogMessage arg)
         {
             Console.WriteLine(arg);
@@ -57,12 +62,50 @@ namespace DiscordDialogue
             var message = msg as SocketUserMessage;
             var context = new SocketCommandContext(_client, message);
             SocketGuild guild = context.Guild;
+            Process proc = Process.GetCurrentProcess();
+            string nickname = "";
 
+            if (message.Author is SocketGuildUser guildUser)
+            {
+                var botUser = guildUser.Guild.CurrentUser;
+                nickname = botUser.Nickname;
+            }
             if (msg.Author.IsBot)
                 return Task.CompletedTask;
-            if (msg.Content == "!train")
+            if (msg.Content.Contains("!train"))
             {
-
+                Stopwatch stopw = new Stopwatch();
+                stopw.Start();
+                IUserMessage _msg = message.ReplyAsync("Training...").Result;
+                try
+                {
+                    Uri uriResult;
+                    bool result = Uri.TryCreate(msg.Content.Split(' ')[1], UriKind.Absolute, out uriResult)
+                        && uriResult.Scheme == Uri.UriSchemeHttp;
+                    if (!result)
+                    {
+                        using (WebClient client = new WebClient())
+                        {
+                            //client.Credentials = new NetworkCredential(username, password);
+                            client.DownloadFile(msg.Content.Split(' ')[1], $@"data\guilds\{context.Guild.Id}\sentances.txt");
+                        }
+                        long length = new FileInfo($@"data\guilds\{context.Guild.Id}\sentances.txt").Length / 1000;
+                        string[] data = util.train(File.ReadAllLines($@"data\guilds\{context.Guild.Id}\sentances.txt"));
+                        File.WriteAllLines($@"data\guilds\{context.Guild.Id}\dataset.txt", data);
+                        long length2 = new FileInfo($@"data\guilds\{context.Guild.Id}\dataset.txt").Length / 1000;
+                        _msg.ModifyAsync(__msg => __msg.Content = $"Success. {length}KB in {stopw.ElapsedMilliseconds}MS to {length2}KB");
+                        //message.ReplyAsync($"Success. {length}KB in {stopw.ElapsedMilliseconds}MS to {length2}KB");
+                    }
+                    else
+                    {
+                        message.ReplyAsync($"Invalid url. \"{msg.Content.Split(' ')[1]}\"");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    message.ReplyAsync($"Invalid url. {ex.Message}");
+                }
+                stopw.Stop();
             }
             if (msg.Content.Contains("!setchannel"))
             {
@@ -73,14 +116,17 @@ namespace DiscordDialogue
             {
                 #region god help me for what comes next
                 Stopwatch stopw = new Stopwatch();
-                stopw.Start();
+                stopw.Start();  
                 string finishedMessage = "";
-                
+                EmbedBuilder eb = new EmbedBuilder();
 
+                finishedMessage += "im a nigger";
 
+                eb.AddField($"Famous words of {nickname}",finishedMessage);
+                eb.Description = $"||Generated in: {stopw.ElapsedMilliseconds}MS\nMemory used: {ConvertBytesToMegabytes(proc.PrivateMemorySize64)}MB||";
+                GC.Collect();
                 stopw.Stop();
-                finishedMessage += $"\n||Generated in: {stopw.ElapsedMilliseconds}MS||";
-                message.ReplyAsync(finishedMessage);
+                message.ReplyAsync(embed:eb.Build());
                 #endregion
             }
             return Task.CompletedTask;

@@ -92,9 +92,9 @@ namespace DiscordDialogue
         }
     }
     #endregion
-    public class util
+    public static class util
     {
-        public string[] train(string[] data/*, string[] replace*/)
+        public static string[] train(string[] data/*, string[] replace*/)
         {
             List<string> output = new List<string>();
             char[] delimitors = { ' ', '-' };
@@ -180,7 +180,7 @@ namespace DiscordDialogue
             }
             return output.ToArray();
         }
-        public word[] train2(string[] data)
+        public static word[] train2(string[] data)
         {
             char[] delimitors = { ' ', '-' };
             List<word> words = new List<word>();
@@ -233,7 +233,7 @@ namespace DiscordDialogue
             }
             return words.ToArray();
         }
-        public word[] serialize(string[] data)
+        public static word[] serialize(string[] data)
         {
             List<word> output = new List<word>();
 
