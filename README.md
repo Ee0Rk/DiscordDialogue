@@ -20,8 +20,8 @@
 	After that the cycle repeats for any more pointers. 
 	Here is an example of 3 pointers: ">9904587785882601485^1>6874912168670054529^1>1920564224340893869^2".
 	Here is an example of a full word: "french(3390027714710160172)>17478102515992830987^1>14621114671688366770^1>5120379740791764018^1"
-	To signify the first word in a sentance a "\~" is placed after the unique ID of the word. 
-	Example: "think(4639753057128184689)\~". After that the pointers are placed.
+	To signify the first word in a sentance a "~" is placed after the unique ID of the word. 
+	Example: "think(4639753057128184689)~". After that the pointers are placed.
 	To signify the last word in a sentance a "<" is placed after the uniqye ID of a word. 
 	Example: "navy(6609155505895385199)<". There are no pointers following.
 	The dataset is stored in plain text in a .txt file. 
