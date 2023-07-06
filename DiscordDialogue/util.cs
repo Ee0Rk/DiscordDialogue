@@ -1,16 +1,65 @@
-﻿using Discord.Audio.Streams;
+﻿using Discord;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Text.RegularExpressions;
 using System.Diagnostics.Eventing.Reader;
+using System.Net.Sockets;
+using Discord.WebSocket;
+using System.Drawing;
 
 namespace DiscordDialogue
 {
     #region classes
+    public static partial class StringUtility
+    {
+        static readonly char[] _WordBreakChars = new char[] { ' ', '_', '\t', '.', '+', '-', '(', ')', '[', ']', '\"', /*'\'',*/ '{', '}', '!', '<', '>', '~', '`', '*', '$', '#', '@', '!', '\\', '/', ':', ';', ',', '?', '^', '%', '&', '|', '\n', '\r', '\v', '\f', '\0' };
+        public static string WordWrap(this string text, int width, params char[] wordBreakChars)
+        {
+            if (string.IsNullOrEmpty(text) || 0 == width || width >= text.Length)
+                return text;
+            if (null == wordBreakChars || 0 == wordBreakChars.Length)
+                wordBreakChars = _WordBreakChars;
+            var sb = new StringBuilder();
+            var sr = new StringReader(text);
+            string line;
+            var first = true;
+            while (null != (line = sr.ReadLine()))
+            {
+                var col = 0;
+                if (!first)
+                {
+                    sb.AppendLine();
+                    col = 0;
+                }
+                else
+                    first = false;
+                var words = line.Split(wordBreakChars);
+
+                for (var i = 0; i < words.Length; i++)
+                {
+                    var word = words[i];
+                    if (0 != i)
+                    {
+                        sb.Append(" ");
+                        ++col;
+                    }
+                    if (col + word.Length > width)
+                    {
+                        sb.AppendLine();
+                        col = 0;
+                    }
+                    sb.Append(word);
+                    col += word.Length;
+                }
+            }
+            return sb.ToString();
+        }
+    }
     public class UniqueULongGenerator
     {
         private ulong current;
@@ -91,9 +140,57 @@ namespace DiscordDialogue
             return str;
         }
     }
+    public class guild
+    {
+        public SocketGuild _guild;
+        public ulong targetChannel;
+        public bool useGlobal;
+        public string[] bannedWords;
+        public guild(SocketGuild sckgld)
+        {
+            this._guild = sckgld;
+        }
+        public void Initialize(SocketGuild sckgld)
+        {
+            try
+            {
+                this.targetChannel = ulong.Parse(File.ReadAllText($@"data\guilds\{sckgld.Id}\channel.txt"));
+            }
+            catch
+            {
+                this.targetChannel = ulong.MaxValue;
+            }
+            this.useGlobal = bool.Parse(File.ReadAllText($@"data\guilds\{sckgld.Id}\useGlobal.txt"));
+            this.bannedWords = File.ReadAllLines($@"data\guilds\{sckgld.Id}\bannedWords.txt");
+        }
+        public void Append()
+        {
+            File.WriteAllText($@"data\guilds\{this._guild.Id}\channel.txt", this.targetChannel.ToString());
+            File.WriteAllText($@"data\guilds\{this._guild.Id}\useGlobal.txt", this.useGlobal.ToString());
+            File.WriteAllLines($@"data\guilds\{this._guild.Id}\bannedWords.txt", this.bannedWords);
+        }
+    }
     #endregion
     public static class util
     {
+        public static Font FindFont(
+           System.Drawing.Graphics g,
+           string longString,
+           Size Room,
+           Font PreferedFont)
+        {
+            // you should perform some scale functions!!!
+            SizeF RealSize = g.MeasureString(longString, PreferedFont);
+            float HeightScaleRatio = Room.Height / RealSize.Height;
+            float WidthScaleRatio = Room.Width / RealSize.Width;
+
+            float ScaleRatio = (HeightScaleRatio < WidthScaleRatio)
+               ? ScaleRatio = HeightScaleRatio
+               : ScaleRatio = WidthScaleRatio;
+            float ScaleFontSize = PreferedFont.Size * ScaleRatio;
+
+            return new Font(PreferedFont.FontFamily, ScaleFontSize);
+        }
         public static string[] train(string[] data/*, string[] replace*/)
         {
             List<string> output = new List<string>();
