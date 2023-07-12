@@ -173,6 +173,57 @@ namespace DiscordDialogue
     #endregion
     public static class util
     {
+        public static void DrawWrappedAndScaledText(Graphics graphics, string text, Font font, Brush brush, RectangleF area)
+        {
+            // Set up word-wrapping and alignment options
+            StringFormat format = new StringFormat();
+            format.Trimming = StringTrimming.Word;
+            format.FormatFlags = StringFormatFlags.LineLimit;
+
+            // Measure the required size for the wrapped text
+            SizeF textSize = graphics.MeasureString(text, font, new SizeF(area.Width, area.Height), format);
+
+            // Calculate the scaling factor to fit the text within the area
+            float scaleX = area.Width / textSize.Width;
+            float scaleY = area.Height / textSize.Height;
+            float scale = Math.Min(scaleX, scaleY);
+
+            // Create a scaled font
+            Font scaledFont = new Font(font.FontFamily, font.Size * scale);
+
+            // Create a new rectangle to fit the scaled text within the area
+            RectangleF scaledArea = new RectangleF(area.Location, new SizeF(area.Width / scale, area.Height / scale));
+
+            Font a;
+            float i = scaledFont.Size;
+            SizeF _ts = graphics.MeasureString(text, scaledFont);
+            if (_ts.Width >= area.Width || _ts.Height >= area.Height)
+            {
+                while (true)
+                {
+                    Console.WriteLine("subtract");
+                    i -= 0.5f;
+                    a = new Font(font.FontFamily, i);
+                    SizeF ts = graphics.MeasureString(text, a);
+                    if (ts.Width <= area.Width || ts.Height <= area.Height) break;
+                }
+            }
+            else
+            {
+                while (true)
+                {
+                    Console.WriteLine("add");
+                    i += 0.5f;
+                    a = new Font(font.FontFamily, i);
+                    SizeF ts = graphics.MeasureString(text, a);
+                    if (ts.Width >= area.Width || ts.Height >= area.Height) break;
+                }
+            }
+            
+
+            // Draw the scaled and word-wrapped text within the scaled area
+            graphics.DrawString(text, a, brush, scaledArea, format);
+        }
         public static Font FindFont(
            System.Drawing.Graphics g,
            string longString,
@@ -343,7 +394,13 @@ namespace DiscordDialogue
 
                 int type = -1;
 
+                ulong _unique;
+                ulong _pointer;
                 string unique = "";
+                string pointer = "";
+                string wheight = "";
+                string word = "";
+                int pointerIndex = 0;
                 List<string> pointerUnique = new List<string>();
                 List<string> pointerWheight = new List<string>();
 
@@ -356,22 +413,37 @@ namespace DiscordDialogue
                     else if (c == '~')
                     { type = 1; continue; }
                     else if (c == '[')
-                    {isReading = true;}
+                    {isReading = true; continue; }
                     else if (c == ']')
-                    {isReading = false; }
+                    {isReading = false; continue; }
                     else if (c == '(')
-                    { isUnique = true; isReading = false; }
+                    { isUnique = true; isReading = false; continue; }
                     else if (c == ')')
-                    { isUnique = false; isReading = false; }
+                    { isUnique = false; isReading = false; continue; }
                     else if (c == '>')
-                    { isPointer = true; isReading = false; }
+                    { isPointer = true; isReading = false; continue; }
                     else if (c == '^')
-                    { isWheight = true; isPointer = false; }
+                    { isWheight = true; isPointer = false; continue; }
                     else
                     {
-
+                        if (isReading) word += c;
+                        else if (isUnique) unique += c;
+                        else if (isPointer)
+                        {
+                            pointer += c;
+                        }
+                        else if (isWheight)
+                        {
+                            wheight += c;
+                            if (pointerIndex > 0)
+                            {
+                                _pointer = ulong.Parse(pointer);
+                            }
+                            pointerIndex++;
+                        }
                     }
                 }
+                _unique = ulong.Parse(unique);
             }
 
             return output.ToArray();

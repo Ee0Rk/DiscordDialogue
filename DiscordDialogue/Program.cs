@@ -15,6 +15,8 @@ using System.Windows.Forms;
 using System.Drawing;
 using System.Net;
 using Discord.Rest;
+using System.Drawing.Text;
+using System.Collections.ObjectModel;
 
 // 8-15 words per sentence
 // <@1124775606157058098>
@@ -37,6 +39,9 @@ namespace DiscordDialogue
         Bitmap portrait;
         Bitmap silhouette;
         string root;
+        PrivateFontCollection fonts = new PrivateFontCollection();
+        FontFamily roboto;
+
 
         public static void Main(string[] args)
             => new Program().RunBotAsync().GetAwaiter().GetResult();
@@ -70,6 +75,12 @@ namespace DiscordDialogue
             portrait = (Bitmap)Bitmap.FromFile($@"{root}\data\portrait.png");
             silhouette = (Bitmap)Bitmap.FromFile($@"{root}\data\silhouette.png");
             Directory.CreateDirectory($@"{root}\data\tmp");
+            foreach (string file in Directory.GetFiles($@"{root}\data\fonts"))
+            {
+                fonts.AddFontFile(file);
+                Console.WriteLine("Loaded: " + Path.GetFileName(file));
+            }
+            roboto = new FontFamily("roboto", fonts);
             stopw.Stop();
             Console.WriteLine($"Cached! {stopw.ElapsedMilliseconds}MS");
 
@@ -85,6 +96,7 @@ namespace DiscordDialogue
 
         private Task MessageReceived(SocketMessage msg)
         {
+            Stopwatch st = Stopwatch.StartNew();
             var message = msg as SocketUserMessage;
             var context = new SocketCommandContext(_client, message);
             SocketGuild guild = context.Guild;
@@ -169,15 +181,16 @@ namespace DiscordDialogue
             if (msg.Content.Contains("!quote"))
             {
                 string quote = quotes[rand.Next(0, quotes.Length - 1)];
+                //string quote = quotes[9];
+
                 Bitmap bmp = new Bitmap(512, 256);
                 Graphics g = Graphics.FromImage(bmp);
                 Font nickFont = util.FindFont(g, nickname, new Size(180, 180), SystemFonts.DefaultFont);
-                Font quoteFont = util.FindFont(g, StringUtility.WordWrap(quote, 15), new Size(256, 256), SystemFonts.DefaultFont);
 
                 g.DrawImage(portrait, 0, 0, 192, 256);
                 g.DrawImage(silhouette, 0,0, 512,256);
                 g.DrawString(nickname, nickFont, Brushes.White, Point.Empty);
-                g.DrawString(quote, quoteFont, Brushes.White, new Point(190,0));
+                g.DrawString(quote, new Font(roboto, 10, FontStyle.Regular), Brushes.White, layoutRectangle: new RectangleF(190, 0, 300, 256));
 
                 bmp.Save($@"{root}\data\tmp\{msg.Id}.png");
                 context.Channel.SendFileAsync($@"{root}\data\tmp\{msg.Id}.png", msg.Author.Mention,false,messageReference:message.Reference).Wait();
@@ -187,7 +200,13 @@ namespace DiscordDialogue
             {
                 _guild.useGlobal = !_guild.useGlobal;
                 _guild.Append();
-                message.ReplyAsync($"Global dataset set to: {_guild.useGlobal}"); 
+                message.ReplyAsync($"Global dataset set to: {_guild.useGlobal}");
+            }
+            if (msg.Content.Contains("!video"))
+            {
+                string[] videos = Directory.GetFiles($@"{root}\data\videos");
+                string video = videos[rand.Next(0, videos.Length - 1)];
+                context.Channel.SendFileAsync(video, msg.Author.Mention+" "+Path.GetFileName(video), false, messageReference: message.Reference);
             }
             if (msg.Content.Contains("<@1124775606157058098>"))
             {
@@ -210,6 +229,7 @@ namespace DiscordDialogue
             guilds[guilds.FindIndex(item => item._guild == guild)] = _guild;
             GC.Collect();
 
+            Console.WriteLine($"MessageReceived in: {st.ElapsedMilliseconds}MS");
             return Task.CompletedTask;
         }
         private Task GuildFound(SocketGuild guild)

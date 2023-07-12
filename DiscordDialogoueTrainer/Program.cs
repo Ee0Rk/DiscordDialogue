@@ -128,13 +128,17 @@ namespace DiscordDialogoueTrainer
             {
                 stopw.Start();
 
+                Console.WriteLine($"Started download: {stopw.ElapsedMilliseconds}MS");
                 using (WebClient client = new WebClient())
                 {
                     //client.Credentials = new NetworkCredential(username, password);
                     client.DownloadFile("https://datastash-ee0rk.pythonanywhere.com/training/daddymartoon", @"input.txt");
                 }
+                Console.WriteLine($"Finished download: {stopw.ElapsedMilliseconds}MS");
 
+                Console.WriteLine($"Reading file download: {stopw.ElapsedMilliseconds}MS");
                 inputLines = File.ReadAllLines("input.txt");
+                Console.WriteLine($"Serializing: {stopw.ElapsedMilliseconds}MS");
                 foreach (string line in inputLines)
                 {
                     foreach (string _word in line.Split(delimitors))
@@ -143,6 +147,7 @@ namespace DiscordDialogoueTrainer
                     }
                 }
 
+                Console.WriteLine($"Removing duplicates: {stopw.ElapsedMilliseconds}MS");
                 var duplicates = words
                     .GroupBy(item => item.text)
                     .Where(group => group.Count() > 1)
@@ -151,6 +156,7 @@ namespace DiscordDialogoueTrainer
                 foreach (var duplicate in duplicates)
                 { words.Remove(duplicate); }
 
+                Console.WriteLine($"Stage 2 serializing: {stopw.ElapsedMilliseconds}MS");
                 foreach (string line in inputLines)
                 {
                     string[] _w = line.Split(delimitors);
@@ -184,6 +190,7 @@ namespace DiscordDialogoueTrainer
                     }
                 }
 
+                Console.WriteLine($"Stage 3 serializing: {stopw.ElapsedMilliseconds}MS");
                 foreach (var word in words)
                 {
                     if (word.type == 1)
@@ -218,6 +225,7 @@ namespace DiscordDialogoueTrainer
                 //    Console.WriteLine(line);
                 //}
 
+                Console.WriteLine($"Writing: {stopw.ElapsedMilliseconds}MS");
                 File.WriteAllLines("output.txt", outputLines.ToArray());
                 long length = new FileInfo("output.txt").Length/1000;
 

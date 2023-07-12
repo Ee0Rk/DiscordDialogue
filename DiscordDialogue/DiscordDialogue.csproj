@@ -111,6 +111,18 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
+    <None Include="data\fonts\Roboto-Light.ttf">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="data\fonts\Roboto-Medium.ttf">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="data\fonts\Roboto-Regular.ttf">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="data\fonts\Roboto-Thin.ttf">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
@@ -119,6 +131,7 @@
     <Folder Include="data\users\" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="Apache License.txt" />
     <Content Include="data\banWords.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
