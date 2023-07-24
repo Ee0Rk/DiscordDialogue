@@ -38,10 +38,10 @@
 |/useglobal|**None**|Changes the status of whether to reply with the global dataset or guild-specific one
 |/video|**None**|Replies with a random video of supreme ruler Zhironovksy of the LDPR
 |Mention|**None**|Responds with a generated sentence from the data gathered. If you change the global status it can generate a sentence based on data gathered from all servers the bot is a part of
-___
+---
 # Dev commands
 ### This is for developers only, only a few select people have the ability to use these commands. If you want to be a candidate for this, message *"ainawastaken"* on Discord.
 |Command|Arguments|Description|
 |-|-|-
 |/reset|**None**|Resets ALL guild/user-specific data stored by the bot. Handy when the storage structure changes and it needs to be reset for the new version. It wipes ALL data stored including user data, per guild settings, per guild datasets, and sentences. Does not wipe the global dataset
-___
+---
