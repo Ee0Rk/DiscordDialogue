@@ -45,5 +45,3 @@ ___
 |-|-|-
 |/reset|**None**|Resets ALL guild/user-specific data stored by the bot. Handy when the storage structure changes and it needs to be reset for the new version. It wipes ALL data stored including user data, per guild settings, per guild datasets, and sentences. Does not wipe the global dataset
 ___
-![Based zhiro](https://datastash-ee0rk.pythonanywhere.com/static/zhiro.png)
-I'm great at website design trust me :D
