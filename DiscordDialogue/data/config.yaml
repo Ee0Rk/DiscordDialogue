@@ -1,0 +1,66 @@
+﻿tokens:
+    discord: "MTEyNDc3NTYwNjE1NzA1ODA5OA.GVmN7_.evZMJU9WHKk511EoB0UhJhpmflEr462n9CxPiQ"
+delimitors:
+  - " "
+  - "-"
+bannedWords:
+  - "(" # used in dataset
+  - ")" # used in dataset
+  - "[" # used in dataset
+  - "]" # used in dataset
+  - "<" # used in dataset
+  - ">" # used in dataset
+  - '"'
+  - "~" # used in dataset
+  - "^" # used in dataset
+  - "@"
+  - "*"
+  - "?ban"
+  - ".img"
+  - "http"
+  - "antidisestablishmentarianism" # :D
+  - "onebump"
+  - "a wild"
+  - ".caption"
+  - ":"
+  - "|"
+  - ".jmg"
+replace:
+  - ".§½"
+  - ",§½"
+  - '"§½'
+  - "#§½"
+  - "…§½"
+assets:
+    fonts:
+        light:   "data\\assets\\fonts\\Roboto-Light.ttf"
+        medium:  "data\\assets\\fonts\\Roboto-Medium.ttf"
+        regular: "data\\assets\\fonts\\Roboto-Regular.ttf"
+        thin:    "data\\assets\\fonts\\Roboto-Thin.ttf"
+    pictures:
+        silhouette: "data\\assets\\silhouette.png"
+        portrait:   "data\\assets\\portrait.png"
+    videos:
+        - "data\\assets\\videos\\dipInDaWater.mp4"
+        - "data\\assets\\videos\\dollarsAlight.mp4"
+        - "data\\assets\\videos\\idkEither.mp4"
+        - "data\\assets\\videos\\ourCountry.mp4"
+        - "data\\assets\\videos\\prostitute.mp4"
+        - "data\\assets\\videos\\shootHimInTheCorridor.mp4"
+    misc:
+        gldCfgTemplate: "data\\cfgTemplate.yaml"
+        quotes: "data\\assets\\quotes.txt"
+directories:
+    guilds: "data\\guilds"
+    temp:   "data\\tmp"
+    users:  "data\\users"
+datasets:
+  globalData: "data\\global\\globalDataset.txt"
+  globalSent: "data\\global\\globalSentances.txt"
+developer:
+  server:  "1096111048228085921"
+  channel: "1132034661183389867"
+  developers:
+    - "455678466793144320"  #ainawastaken
+    - "686120923039793179"  #_kalibr
+    - "1059851063584358491" #malorussia

@@ -17,6 +17,9 @@ using System.Net;
 using Discord.Rest;
 using System.Drawing.Text;
 using System.Collections.ObjectModel;
+using System.Dynamic;
+using YamlDotNet.Serialization;
+using YamlDotNet.Serialization.NamingConventions;
 
 // 8-15 words per sentence
 // <@1124775606157058098>
@@ -31,17 +34,18 @@ namespace DiscordDialogue
 
         public volatile List<guild> guilds = new List<guild>();
 
-        string[] replacements;
+        List<KeyValuePair<string,string>> replacements = new List<KeyValuePair<string, string>>();
         string[] bannedWords;
         string[] quotes;
         char[] delimitors;
-        string token;
         Bitmap portrait;
         Bitmap silhouette;
         string root;
-        PrivateFontCollection fonts = new PrivateFontCollection();
         FontFamily roboto;
+        List<ulong> devs = new List<ulong>();
+        string gldCfgTemplate;
 
+        dynamic cfg;
 
         public static void Main(string[] args)
             => new Program().RunBotAsync().GetAwaiter().GetResult();
@@ -63,39 +67,48 @@ namespace DiscordDialogue
             });
             _commands = new CommandService();
 
+            #region cache
             Stopwatch stopw = Stopwatch.StartNew();
             Console.WriteLine("Caching...");
-            rand = new Random(DateTime.Now.Millisecond*DateTime.Now.Second);
-            root = Directory.GetParent(Application.ExecutablePath).FullName;
-            bannedWords = File.ReadAllLines(@"data\banWords.txt");
-            replacements = File.ReadAllLines(@"data\replace.txt");
-            delimitors = File.ReadAllText(@"data\delimitors.txt").ToCharArray();
-            token = File.ReadAllText(@"data\token.txt");
-            quotes = File.ReadAllLines(@"data\quotes.txt");
-            portrait = (Bitmap)Bitmap.FromFile($@"{root}\data\portrait.png");
-            silhouette = (Bitmap)Bitmap.FromFile($@"{root}\data\silhouette.png");
-            Directory.CreateDirectory($@"{root}\data\tmp");
-            foreach (string file in Directory.GetFiles($@"{root}\data\fonts"))
+            var deserializer = new YamlDotNet.Serialization.DeserializerBuilder()
+                .WithNamingConvention(CamelCaseNamingConvention.Instance)
+                .Build();
+            cfg = deserializer.Deserialize<ExpandoObject>(File.ReadAllText("data\\config.yaml"));
+
+            silhouette = new Bitmap(cfg.assets["pictures"]["silhouette"]);
+            portrait = new Bitmap(cfg.assets["pictures"]["portrait"]);
+            quotes = File.ReadAllLines(cfg.assets["misc"]["quotes"]);
+            delimitors = ((List<object>)cfg.delimitors).OfType<string>().ToArray().SelectMany(str => str).ToArray();
+            PrivateFontCollection collection = new PrivateFontCollection();
+            collection.AddFontFile(cfg.assets["fonts"]["thin"]);
+            roboto = new FontFamily("Roboto", collection);
+            bannedWords = ((List<object>)cfg.bannedWords).OfType<string>().ToArray();
+            root = Directory.GetParent(Application.ExecutablePath).ToString();
+            gldCfgTemplate = File.ReadAllText(cfg.assets["misc"]["gldCfgTemplate"]);
+
+            foreach (string d in ((List<object>)cfg.developer["developers"]).OfType<string>().ToArray())devs.Add(ulong.Parse(d));
+            foreach (string b in ((List<object>)cfg.replace).OfType<string>().ToArray())
             {
-                fonts.AddFontFile(file);
-                Console.WriteLine("Loaded: " + Path.GetFileName(file));
+                string[] c = b.Split('§');
+                replacements.Add( new KeyValuePair<string, string>(c[0], c[1].Replace("½", "")));
             }
-            roboto = new FontFamily("roboto", fonts);
+
             stopw.Stop();
             Console.WriteLine($"Cached! {stopw.ElapsedMilliseconds}MS");
+            #endregion
 
             _client.Log += Log;
             _client.MessageReceived += MessageReceived;
             _client.GuildAvailable += GuildFound;
-            
 
-            await _client.LoginAsync(TokenType.Bot, token);
+            await _client.LoginAsync(TokenType.Bot, cfg.tokens["discord"]);
             await _client.StartAsync();
             await Task.Delay(-1);
         }
 
         private Task MessageReceived(SocketMessage msg)
         {
+            #region setup
             Stopwatch st = Stopwatch.StartNew();
             var message = msg as SocketUserMessage;
             var context = new SocketCommandContext(_client, message);
@@ -104,8 +117,7 @@ namespace DiscordDialogue
             Process proc = Process.GetCurrentProcess();
             string nickname = "";
             if (_guild == null) Console.WriteLine("Guild was null");
-
-
+            #endregion
             #region check if eligable
             bool isEligable = true;
             bool isEligableLocal = true;
@@ -124,9 +136,16 @@ namespace DiscordDialogue
             }
             if (isEligable)
             {
-                using (StreamWriter sw = File.AppendText(@"data\global\globalSentances"))
+                using (StreamWriter sw = File.AppendText(@"data\global\globalSentances.txt"))
                 {
-                    sw.WriteLine("This");
+                    sw.WriteLine(message.CleanContent);
+                }
+            }
+            if (isEligableLocal)
+            {
+                using (StreamWriter sw = File.AppendText($@"data\guilds\{guild.Id}\sentances.txt"))
+                {
+                    sw.WriteLine(message.CleanContent);
                 }
             }
             #endregion
@@ -225,6 +244,23 @@ namespace DiscordDialogue
                 message.ReplyAsync(embed:eb.Build());
                 #endregion
             }
+            #region dev commands
+            if (devs.Contains(message.Author.Id))
+            {
+                if (msg.Content.Contains("!reset"))
+                {
+                    Directory.Delete("data\\guilds", true);
+                    Directory.Delete("data\\users",true);
+                    Directory.CreateDirectory("data\\guilds");
+                    Directory.CreateDirectory("data\\users");
+                    foreach (guild gld in guilds)
+                    {
+                        Directory.CreateDirectory($@"data\guilds\{gld._guild.Id}");
+                        File.WriteAllText($@"data\guilds\{gld._guild.Id}\properties.yaml", gldCfgTemplate);
+                    }
+                }
+            }
+            #endregion
 
             guilds[guilds.FindIndex(item => item._guild == guild)] = _guild;
             GC.Collect();
@@ -234,6 +270,10 @@ namespace DiscordDialogue
         }
         private Task GuildFound(SocketGuild guild)
         {
+            if (!Directory.Exists(@"data\guilds"))
+            {
+                Directory.CreateDirectory(@"data\guilds");
+            }
             string[] dirs = Directory.GetDirectories(@"data\guilds");
             ulong[] storedGuilds = new ulong[dirs.Length];
             bool isStored = false;
@@ -247,10 +287,10 @@ namespace DiscordDialogue
             if (isStored == false)
             {
                 Directory.CreateDirectory($@"data\guilds\{guild.Id}");
-                File.CreateText($@"data\guilds\{guild.Id}\sentances.txt");
-                File.CreateText($@"data\guilds\{guild.Id}\dataset.txt");
-                File.CreateText($@"data\guilds\{guild.Id}\channel.txt");
-                File.CreateText($@"data\guilds\{guild.Id}\bannedWords.txt");
+                File.CreateText($@"data\guilds\{guild.Id}\sentances.txt").Dispose();
+                File.CreateText($@"data\guilds\{guild.Id}\dataset.txt").Dispose();
+                File.CreateText($@"data\guilds\{guild.Id}\channel.txt").Dispose();
+                File.CreateText($@"data\guilds\{guild.Id}\bannedWords.txt").Dispose();
                 File.WriteAllText($@"data\guilds\{guild.Id}\useGlobal.txt",bool.FalseString);
             }
             else
@@ -263,11 +303,3 @@ namespace DiscordDialogue
         }
     }
 }
-/*
- * using (StreamWriter sw = File.AppendText(path))
-        {
-            sw.WriteLine("This");
-            sw.WriteLine("is Extra");
-            sw.WriteLine("Text");
-        }	
-*/

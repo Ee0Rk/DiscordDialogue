@@ -175,23 +175,18 @@ namespace DiscordDialogue
     {
         public static void DrawWrappedAndScaledText(Graphics graphics, string text, Font font, Brush brush, RectangleF area)
         {
-            // Set up word-wrapping and alignment options
             StringFormat format = new StringFormat();
             format.Trimming = StringTrimming.Word;
             format.FormatFlags = StringFormatFlags.LineLimit;
 
-            // Measure the required size for the wrapped text
             SizeF textSize = graphics.MeasureString(text, font, new SizeF(area.Width, area.Height), format);
 
-            // Calculate the scaling factor to fit the text within the area
             float scaleX = area.Width / textSize.Width;
             float scaleY = area.Height / textSize.Height;
             float scale = Math.Min(scaleX, scaleY);
 
-            // Create a scaled font
             Font scaledFont = new Font(font.FontFamily, font.Size * scale);
 
-            // Create a new rectangle to fit the scaled text within the area
             RectangleF scaledArea = new RectangleF(area.Location, new SizeF(area.Width / scale, area.Height / scale));
 
             Font a;
@@ -220,8 +215,6 @@ namespace DiscordDialogue
                 }
             }
             
-
-            // Draw the scaled and word-wrapped text within the scaled area
             graphics.DrawString(text, a, brush, scaledArea, format);
         }
         public static Font FindFont(
@@ -230,7 +223,6 @@ namespace DiscordDialogue
            Size Room,
            Font PreferedFont)
         {
-            // you should perform some scale functions!!!
             SizeF RealSize = g.MeasureString(longString, PreferedFont);
             float HeightScaleRatio = Room.Height / RealSize.Height;
             float WidthScaleRatio = Room.Width / RealSize.Width;

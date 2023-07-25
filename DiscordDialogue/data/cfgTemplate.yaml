@@ -1,0 +1,4 @@
+channel: ""
+bannedWords:
+  - "antidisestablishmentarianism" # :D
+useGlobal: false
