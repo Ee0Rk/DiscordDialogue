@@ -93,7 +93,7 @@ namespace DiscordDialogue
                 replacements.Add( new KeyValuePair<string, string>(c[0], c[1].Replace("½", "")));
             }
 
-            Console.WriteLine($"Cached! {stopw.ElapsedMilliseconds}MS {Math.Round((double)Process.GetCurrentProcess().PrivateMemorySize64 / (1024 * 1024))}MB");
+            Console.WriteLine($"Cached! {stopw.ElapsedMilliseconds}MS {ConvertBytesToMegabytes(Process.GetCurrentProcess().PrivateMemorySize64)}MB");
             GC.Collect();
             stopw.Stop();
             #endregion
