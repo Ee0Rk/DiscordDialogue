@@ -1,5 +1,5 @@
 ﻿tokens:
-    discord: "MTEyNDc3NTYwNjE1NzA1ODA5OA.GVmN7_.evZMJU9WHKk511EoB0UhJhpmflEr462n9CxPiQ"
+    discord: "data\\token.txt" # MAKE SURE TO ADD THIS!!!!!
 delimitors:
   - " "
   - "-"
