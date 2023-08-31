@@ -11,6 +11,9 @@ using System.Diagnostics.Eventing.Reader;
 using System.Net.Sockets;
 using Discord.WebSocket;
 using System.Drawing;
+using System.Dynamic;
+using YamlDotNet.Serialization.NamingConventions;
+using YamlDotNet.Serialization;
 
 namespace DiscordDialogue
 {
@@ -152,27 +155,49 @@ namespace DiscordDialogue
         }
         public void Initialize(SocketGuild sckgld)
         {
+            this._guild = sckgld;
+            var deserializer = new YamlDotNet.Serialization.DeserializerBuilder()
+            .WithNamingConvention(CamelCaseNamingConvention.Instance)
+            .Build();
+            dynamic cfg = deserializer.Deserialize<ExpandoObject>(File.ReadAllText($@"data\guilds\{sckgld.Id}\properties.yaml"));
+            dynamic _cfg = deserializer.Deserialize<ExpandoObject>(File.ReadAllText($@"data\cfgTemplate.yaml"));
             try
             {
-                this.targetChannel = ulong.Parse(File.ReadAllText($@"data\guilds\{sckgld.Id}\channel.txt"));
+                this.targetChannel = ulong.Parse(cfg.channel);
+                this.useGlobal = bool.Parse(cfg.use_global);
+                this.bannedWords = ((List<object>)cfg.banned_words).OfType<string>().ToArray();
             }
-            catch
+            catch (Exception ex)
             {
-                this.targetChannel = ulong.MaxValue;
+                this.targetChannel = ulong.Parse(_cfg.channel);
+                this.useGlobal = bool.Parse(_cfg.use_global);
+                this.bannedWords = ((List<object>)_cfg.banned_words).OfType<string>().ToArray();
+                Console.WriteLine(ex.Message + "\n" + ex.StackTrace);
             }
-            this.useGlobal = bool.Parse(File.ReadAllText($@"data\guilds\{sckgld.Id}\useGlobal.txt"));
-            this.bannedWords = File.ReadAllLines($@"data\guilds\{sckgld.Id}\bannedWords.txt");
         }
         public void Append()
         {
-            File.WriteAllText($@"data\guilds\{this._guild.Id}\channel.txt", this.targetChannel.ToString());
-            File.WriteAllText($@"data\guilds\{this._guild.Id}\useGlobal.txt", this.useGlobal.ToString());
-            File.WriteAllLines($@"data\guilds\{this._guild.Id}\bannedWords.txt", this.bannedWords);
+            var deserializer = new YamlDotNet.Serialization.DeserializerBuilder()
+                .WithNamingConvention(CamelCaseNamingConvention.Instance)
+                .Build();
+            dynamic cfg = deserializer.Deserialize<ExpandoObject>(File.ReadAllText($@"data\guilds\{this._guild.Id}\properties.yaml"));
+
+            cfg.channel = this.targetChannel.ToString();
+            cfg.use_global = this.useGlobal.ToString();
+            cfg.banned_words = this.bannedWords;
+
+            var serializer = new SerializerBuilder().WithNamingConvention(UnderscoredNamingConvention.Instance).Build();
+            string modifiedYaml = serializer.Serialize(cfg);
+            File.WriteAllText($@"data\guilds\{this._guild.Id}\properties.yaml", modifiedYaml);
         }
     }
     #endregion
     public static class util
     {
+        public static double ConvertBytesToMegabytes(long bytes)
+        {
+            return Math.Round((bytes / 1024f) / 1024f);
+        }
         public static void DrawWrappedAndScaledText(Graphics graphics, string text, Font font, Brush brush, RectangleF area)
         {
             StringFormat format = new StringFormat();

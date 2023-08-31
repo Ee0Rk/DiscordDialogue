@@ -1,0 +1,16 @@
+id: "18446744073709551615"
+name: "default"
+avatar: "https://datastash-ee0rk.pythonanywhere.com/static/ukraineTrollface.png"
+categories:
+  - 18446744073709551615:
+      name: "default"
+      channels:
+        - 18446744073709551615:
+            type: 0
+            name: "default"
+users:
+  - 18446744073709551615:
+      username: "default"
+      tag: "0000"
+      pfp: "https://datastash-ee0rk.pythonanywhere.com/static/russianTrollface.png"
+      bio: "null"

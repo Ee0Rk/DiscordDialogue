@@ -1,4 +1,4 @@
-channel: ""
-bannedWords:
+channel: "18446744073709551615"
+banned_words:
   - "antidisestablishmentarianism" # :D
-useGlobal: false
+use_global: "False"

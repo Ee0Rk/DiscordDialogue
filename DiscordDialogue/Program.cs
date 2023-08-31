@@ -20,14 +20,14 @@ using System.Collections.ObjectModel;
 using System.Dynamic;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
-
+using System.Runtime.Remoting.Messaging;
 // 8-15 words per sentence
 // <@1124775606157058098>
-
 namespace DiscordDialogue
 {
     internal class Program
     {
+        #region var
         private DiscordSocketClient _client;
         private CommandService _commands;
         Random rand = new Random(69420);
@@ -46,14 +46,10 @@ namespace DiscordDialogue
         string gldCfgTemplate;
 
         dynamic cfg;
+        #endregion
 
         public static void Main(string[] args)
             => new Program().RunBotAsync().GetAwaiter().GetResult();
-
-        static double ConvertBytesToMegabytes(long bytes)
-        {
-            return Math.Round((bytes / 1024f) / 1024f);
-        }
         private Task Log(LogMessage arg)
         {
             Console.WriteLine(arg);
@@ -85,6 +81,7 @@ namespace DiscordDialogue
             bannedWords = ((List<object>)cfg.bannedWords).OfType<string>().ToArray();
             root = Directory.GetParent(Application.ExecutablePath).ToString();
             gldCfgTemplate = File.ReadAllText(cfg.assets["misc"]["gldCfgTemplate"]);
+            Directory.CreateDirectory("data\\tmp");
 
             foreach (string d in ((List<object>)cfg.developer["developers"]).OfType<string>().ToArray())devs.Add(ulong.Parse(d));
             foreach (string b in ((List<object>)cfg.replace).OfType<string>().ToArray())
@@ -93,7 +90,7 @@ namespace DiscordDialogue
                 replacements.Add( new KeyValuePair<string, string>(c[0], c[1].Replace("½", "")));
             }
 
-            Console.WriteLine($"Cached! {stopw.ElapsedMilliseconds}MS {ConvertBytesToMegabytes(Process.GetCurrentProcess().PrivateMemorySize64)}MB");
+            Console.WriteLine($"Cached! {stopw.ElapsedMilliseconds}MS {util.ConvertBytesToMegabytes(Process.GetCurrentProcess().PrivateMemorySize64)}MB");
             GC.Collect();
             stopw.Stop();
             #endregion
@@ -101,12 +98,10 @@ namespace DiscordDialogue
             _client.Log += Log;
             _client.MessageReceived += MessageReceived;
             _client.GuildAvailable += GuildFound;
-
             await _client.LoginAsync(TokenType.Bot, File.ReadAllText(cfg.tokens["discord"]));
             await _client.StartAsync();
             await Task.Delay(-1);
         }
-
         private Task MessageReceived(SocketMessage msg)
         {
             #region setup
@@ -114,10 +109,11 @@ namespace DiscordDialogue
             var message = msg as SocketUserMessage;
             var context = new SocketCommandContext(_client, message);
             SocketGuild guild = context.Guild;
-            guild _guild = guilds.Find(item => item._guild == guild);
+            guild _guild = guilds.Find(item => item._guild.Id == guild.Id);
             Process proc = Process.GetCurrentProcess();
             string nickname = "";
             if (_guild == null) Console.WriteLine("Guild was null");
+            string[] coms = msg.Content.Split(' ');
             #endregion
             #region check if eligable
             bool isEligable = true;
@@ -157,7 +153,7 @@ namespace DiscordDialogue
                 nickname = botUser.Nickname;
             }
             if (msg.Author.IsBot) return Task.CompletedTask;
-            if (msg.Content.Contains("!train"))
+            if (coms[0] == "!train")
             {
                 Stopwatch stopw = new Stopwatch();
                 stopw.Start();
@@ -192,13 +188,13 @@ namespace DiscordDialogue
                 }
                 stopw.Stop();
             }
-            if (msg.Content.Contains("!setchannel"))
+            if (coms[0] == "!setchannel")
             {
                 _guild.targetChannel = msg.Channel.Id;
                 _guild.Append();
                 message.ReplyAsync($"Channel set to: #{msg.Channel.Name} ({msg.Channel.Id})");
             }
-            if (msg.Content.Contains("!quote"))
+            if (coms[0] == "!quote")
             {
                 string quote = quotes[rand.Next(0, quotes.Length - 1)];
                 //string quote = quotes[9];
@@ -216,19 +212,19 @@ namespace DiscordDialogue
                 context.Channel.SendFileAsync($@"{root}\data\tmp\{msg.Id}.png", msg.Author.Mention,false,messageReference:message.Reference).Wait();
                 File.Delete($@"{root}\data\tmp\{msg.Id}.png");
             }
-            if (msg.Content.Contains("!useglobal"))
+            if (coms[0] == "!useglobal")
             {
                 _guild.useGlobal = !_guild.useGlobal;
                 _guild.Append();
                 message.ReplyAsync($"Global dataset set to: {_guild.useGlobal}");
             }
-            if (msg.Content.Contains("!video"))
+            if (coms[0] == "!video")
             {
-                string[] videos = Directory.GetFiles($@"{root}\data\videos");
+                string[] videos = ((List<object>)cfg.assets["videos"]).OfType<string>().ToArray();
                 string video = videos[rand.Next(0, videos.Length - 1)];
                 context.Channel.SendFileAsync(video, msg.Author.Mention+" "+Path.GetFileName(video), false, messageReference: message.Reference);
             }
-            if (msg.Content.Contains("<@1124775606157058098>"))
+            if (coms[0] == "<@1124775606157058098>")
             {
                 #region god help me for what comes next
                 Stopwatch stopw = new Stopwatch();
@@ -239,7 +235,7 @@ namespace DiscordDialogue
                 finishedMessage += "im a nigger";
 
                 eb.AddField($"Famous words of {nickname}",finishedMessage);
-                eb.Description = $"||Generated in: {stopw.ElapsedMilliseconds}MS\nMemory used: {ConvertBytesToMegabytes(proc.PrivateMemorySize64)}MB||";
+                eb.Description = $"||Generated in: {stopw.ElapsedMilliseconds}MS\nMemory used: {util.ConvertBytesToMegabytes(proc.PrivateMemorySize64)}MB||";
                 GC.Collect();
                 stopw.Stop();
                 message.ReplyAsync(embed:eb.Build());
@@ -248,16 +244,44 @@ namespace DiscordDialogue
             #region dev commands
             if (devs.Contains(message.Author.Id))
             {
-                if (msg.Content.Contains("!reset"))
+                if (coms[0] == "!reset")
                 {
                     Directory.Delete("data\\guilds", true);
-                    Directory.Delete("data\\users",true);
+                    Directory.Delete("data\\users", true);
                     Directory.CreateDirectory("data\\guilds");
                     Directory.CreateDirectory("data\\users");
                     foreach (guild gld in guilds)
                     {
                         Directory.CreateDirectory($@"data\guilds\{gld._guild.Id}");
                         File.WriteAllText($@"data\guilds\{gld._guild.Id}\properties.yaml", gldCfgTemplate);
+                    }
+                }
+                if (coms[0] == "!root")
+                {
+                    /*
+                    Directory.Delete("data\\guilds", true);
+                    Directory.Delete("data\\users", true);
+                    Directory.CreateDirectory("data\\guilds");
+                    Directory.CreateDirectory("data\\users");
+                    foreach (guild gld in guilds)
+                    {
+                        Directory.CreateDirectory($@"data\guilds\{gld._guild.Id}");
+                        File.WriteAllText($@"data\guilds\{gld._guild.Id}\properties.yaml", gldCfgTemplate);
+                    }
+                    */
+                }
+                if (coms[0] == "!dump")
+                {
+                    var deserializer = new DeserializerBuilder().WithNamingConvention(CamelCaseNamingConvention.Instance).Build();
+                    dynamic _cfg = deserializer.Deserialize<ExpandoObject>(File.ReadAllText($@"data\dumpTemplate.yaml"));
+                    foreach (SocketCategoryChannel cat in guild.CategoryChannels)
+                    {
+                        foreach (SocketChannel chn in cat.Channels)
+                        {
+                        }
+                    }
+                    foreach (SocketUser usr in guild.Users)
+                    {
                     }
                 }
             }
@@ -283,16 +307,21 @@ namespace DiscordDialogue
             {
                 ulong unique = ulong.Parse(Path.GetFileName(dirs[i]));
                 storedGuilds[i] = unique;
-                if (guild.Id == unique) isStored = true;
+                if (guild.Id == unique) 
+                {
+                    isStored = true;
+                }
             }
             if (isStored == false)
             {
                 Directory.CreateDirectory($@"data\guilds\{guild.Id}");
+                File.WriteAllText($@"data\guilds\{guild.Id}\properties.yaml", gldCfgTemplate);
                 File.CreateText($@"data\guilds\{guild.Id}\sentances.txt").Dispose();
                 File.CreateText($@"data\guilds\{guild.Id}\dataset.txt").Dispose();
-                File.CreateText($@"data\guilds\{guild.Id}\channel.txt").Dispose();
-                File.CreateText($@"data\guilds\{guild.Id}\bannedWords.txt").Dispose();
-                File.WriteAllText($@"data\guilds\{guild.Id}\useGlobal.txt",bool.FalseString);
+
+                guild gld = new guild(guild);
+                gld.Initialize(gld._guild);
+                guilds.Add(gld);
             }
             else
             {
