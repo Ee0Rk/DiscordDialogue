@@ -10,7 +10,6 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Diagnostics;
 using System.Threading;
-using Microsoft.Extensions.DependencyInjection;
 using System.Windows.Forms;
 using System.Drawing;
 using System.Net;
@@ -47,7 +46,7 @@ namespace DiscordDialogue
         List<ulong> devs = new List<ulong>();
         string gldCfgTemplate;
 
-        dynamic cfg;
+        public static volatile dynamic cfg;
         #endregion
 
         public static void Main(string[] args)
@@ -186,7 +185,43 @@ namespace DiscordDialogue
                 }
                 catch (Exception ex)
                 {
-                    message.ReplyAsync($"Invalid url. {ex.Message}");
+                    message.ReplyAsync($"Invalid url. {ex.Message}\n\"{msg.Content.Split(' ')[1]}\"");
+                }
+                stopw.Stop();
+            }
+            if (coms[0] == "!trainfile")
+            {
+                Stopwatch stopw = new Stopwatch();
+                stopw.Start();
+                IUserMessage _msg = message.ReplyAsync("Training...").Result;
+                try
+                {
+                    var a = msg.Attachments.ToArray()[0];
+                    Uri uriResult;
+                    bool result = Uri.TryCreate(a.Url, UriKind.Absolute, out uriResult)
+                        && uriResult.Scheme == Uri.UriSchemeHttp;
+                    if (!result)
+                    {
+                        using (WebClient client = new WebClient())
+                        {
+                            //client.Credentials = new NetworkCredential(username, password);
+                            client.DownloadFile(a.Url, $@"data\guilds\{context.Guild.Id}\sentances.txt");
+                        }
+                        long length = new FileInfo($@"data\guilds\{context.Guild.Id}\sentances.txt").Length / 1000;
+                        string[] data = util.train(File.ReadAllLines($@"data\guilds\{context.Guild.Id}\sentances.txt"));
+                        File.WriteAllLines($@"data\guilds\{context.Guild.Id}\dataset.txt", data);
+                        long length2 = new FileInfo($@"data\guilds\{context.Guild.Id}\dataset.txt").Length / 1000;
+                        _msg.ModifyAsync(__msg => __msg.Content = $"Success. {length}KB in {stopw.ElapsedMilliseconds}MS to {length2}KB");
+                        //message.ReplyAsync($"Success. {length}KB in {stopw.ElapsedMilliseconds}MS to {length2}KB");
+                    }
+                    else
+                    {
+                        message.ReplyAsync($"Invalid url. \"{a}\"");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    message.ReplyAsync($"Invalid url. {ex.Message}\n{ex.StackTrace}");
                 }
                 stopw.Stop();
             }
@@ -194,7 +229,7 @@ namespace DiscordDialogue
             {
                 _guild.targetChannel = msg.Channel.Id;
                 _guild.Append();
-                message.ReplyAsync($"Channel set to: #{msg.Channel.Name} ({msg.Channel.Id})");
+                message.ReplyAsync($"Channel set to: <#{msg.Channel.Id}> ({msg.Channel.Id})");
             }
             if (coms[0] == "!quote")
             {
@@ -205,6 +240,7 @@ namespace DiscordDialogue
                 Graphics g = Graphics.FromImage(bmp);
                 Font nickFont = util.FindFont(g, nickname, new Size(180, 180), SystemFonts.DefaultFont);
 
+                g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
                 g.DrawImage(portrait, 0, 0, 192, 256);
                 g.DrawImage(silhouette, 0,0, 512,256);
                 g.DrawString(nickname, nickFont, Brushes.White, Point.Empty);

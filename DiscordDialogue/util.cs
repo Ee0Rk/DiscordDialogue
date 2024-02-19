@@ -17,6 +17,7 @@ using YamlDotNet.Serialization;
 
 namespace DiscordDialogue
 {
+
     #region classes
     public static partial class StringUtility
     {
@@ -88,11 +89,35 @@ namespace DiscordDialogue
             current = seed;
         }
     }
+    public class UniqueRandomGenerator
+    {
+        private static Random random = new Random();
+        private static HashSet<uint> usedIds = new HashSet<uint>();
+
+        public static uint GenerateUniqueUInt()
+        {
+            uint randomId;
+
+            do
+            {
+                randomId = (uint)random.Next();
+            } while (usedIds.Contains(randomId));
+
+            usedIds.Add(randomId);
+            return randomId;
+        }
+
+        // Optional: You can reset the usedIds set if needed
+        public static void ResetUsedIds()
+        {
+            usedIds.Clear();
+        }
+    }
     public class pointer
     {
-        public ulong target = ulong.MaxValue;
-        public ulong wheight = ulong.MinValue;
-        public pointer(ulong trg, ulong whgt = ulong.MinValue)
+        public uint target = uint.MaxValue;
+        public ushort wheight = ushort.MinValue;
+        public pointer(uint trg, ushort whgt = ushort.MinValue)
         {
             this.wheight = whgt;
             this.target = trg;
@@ -101,17 +126,17 @@ namespace DiscordDialogue
     public class word
     {
         public string text = "";
-        public ulong unique = ulong.MaxValue;
+        public uint unique = uint.MaxValue;
         public List<pointer> pointers = new List<pointer>();
-        public int type = 0;
-        public int wheight = 0;
+        public byte type = 0;
+        public ushort wheight = 0;
         // 0 normal; 1 beginning; 2 end
-        public word(string text, ulong unique)
+        public word(string text, uint unique)
         {
             this.text = text;
             this.unique = unique;
         }
-        public void addPointer(ulong target)
+        public void addPointer(uint target)
         {
             int exists = -1;
             int ind = 0;
@@ -131,7 +156,7 @@ namespace DiscordDialogue
             {
                 this.pointers[exists].wheight++;
             }
-            this.wheight = this.pointers.Count;
+            this.wheight = (ushort)this.pointers.Count;
         }
         public override string ToString()
         {
@@ -194,6 +219,12 @@ namespace DiscordDialogue
     #endregion
     public static class util
     {
+        #region vars
+        static Regex sbc = new Regex("\\[[^\\]]*\\]", RegexOptions.IgnoreCase); // square brackets content
+        static Regex pc = new Regex("\\([^)]*\\)", RegexOptions.IgnoreCase); // parentheses content
+
+        static char[] nums = new char[] { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' };
+        #endregion
         public static double ConvertBytesToMegabytes(long bytes)
         {
             return Math.Round((bytes / 1024f) / 1024f);
@@ -258,64 +289,12 @@ namespace DiscordDialogue
         public static string[] train(string[] data/*, string[] replace*/)
         {
             List<string> output = new List<string>();
-            char[] delimitors = { ' ', '-' };
-            List<word> words = new List<word>();
-            UniqueULongGenerator keyGen = new UniqueULongGenerator(ulong.MaxValue);
-
-            foreach (string line in data)
-            {
-                foreach (string _word in line.Split(delimitors))
-                {
-                    words.Add(new word(_word, keyGen.Next()));
-                }
-            }
-
-            var duplicates = words
-                .GroupBy(item => item.text)
-                .Where(group => group.Count() > 1)
-                .SelectMany(group => group.Skip(1))
-                .ToList();
-            foreach (var duplicate in duplicates)
-            { words.Remove(duplicate); }
-
-            foreach (string line in data)
-            {
-                string[] _w = line.Split(delimitors);
-                if (_w.Length > 3)
-                {
-                    int maxInd = _w.Length - 1;
-                    for (int i = 0; i < _w.Length; i++)
-                    {
-                        string curWord = _w[i];
-                        string nextWord = null;
-                        if (i != maxInd)
-                        {
-                            nextWord = _w[i + 1];
-                        }
-                        if (i == 0)
-                        {
-                            words.Find(item => item.text == curWord).type = 1;
-                            words.Find(item => item.text == nextWord).type = 0;
-                            words.Find(item => item.text == curWord).addPointer(words.Find(item => item.text == nextWord).unique);
-                        }
-                        else if (i != 0 & i != maxInd)
-                        {
-                            words.Find(item => item.text == curWord).type = 1;
-                            words.Find(item => item.text == curWord).addPointer(words.Find(item => item.text == nextWord).unique);
-                        }
-                        else if (i == maxInd)
-                        {
-                            words.Find(item => item.text == curWord).type = 2;
-                        }
-                    }
-                }
-            }
-
+            word[] words = train2(data);
             foreach (var word in words)
             {
                 if (word.type == 1)
                 {
-                    string str = $"[{word.text}({word.unique})~";
+                    string str = $"[{word.text}({word.unique}^{word.wheight})~";
                     foreach (pointer pntr in word.pointers)
                     {
                         str += $">{pntr.target}^{pntr.wheight}";
@@ -325,7 +304,7 @@ namespace DiscordDialogue
                 }
                 if (word.type == 0)
                 {
-                    string str = $"[{word.text}({word.unique})";
+                    string str = $"[{word.text}({word.unique}^{word.wheight})";
                     foreach (pointer pntr in word.pointers)
                     {
                         str += $">{pntr.target}^{pntr.wheight}";
@@ -335,7 +314,7 @@ namespace DiscordDialogue
                 }
                 if (word.type == 2)
                 {
-                    string str = $"[{word.text}({word.unique})<]";
+                    string str = $"[{word.text}({word.unique}^{word.wheight})<]";
                     output.Add(str);
                 }
             }
@@ -343,21 +322,22 @@ namespace DiscordDialogue
         }
         public static word[] train2(string[] data)
         {
-            char[] delimitors = { ' ', '-' };
+            char[] delimitors = ((List<object>)Program.cfg.delimitors).OfType<char>().ToArray();
             List<word> words = new List<word>();
-            UniqueULongGenerator keyGen = new UniqueULongGenerator(ulong.MaxValue);
+            uint indice = 0;
             foreach (string line in data)
             {
                 foreach (string _word in line.Split(delimitors))
                 {
-                    words.Add(new word(_word, keyGen.Next()));
+                    words.Add(new word(_word, indice));
+                    indice++;
                 }
             }
             var duplicates = words
                 .GroupBy(item => item.text)
                 .Where(group => group.Count() > 1)
                 .SelectMany(group => group.Skip(1))
-                .ToList();
+                .ToArray();
             foreach (var duplicate in duplicates)
             { words.Remove(duplicate); }
             foreach (string line in data)
@@ -382,7 +362,7 @@ namespace DiscordDialogue
                         }
                         else if (i != 0 & i != maxInd)
                         {
-                            words.Find(item => item.text == curWord).type = 1;
+                            words.Find(item => item.text == curWord).type = 0;
                             words.Find(item => item.text == curWord).addPointer(words.Find(item => item.text == nextWord).unique);
                         }
                         else if (i == maxInd)
@@ -400,63 +380,86 @@ namespace DiscordDialogue
 
             foreach (string line in data)
             {
-                bool isReading = false;
-                bool isUnique = false;
-                bool isWheight = false;
-                bool isPointer = false;
+                string content = sbc.Match(line).Value;
+                string[] a = pc.Match(content).Value.Split('^');
+                uint wordUnique = uint.Parse(a[0]);
+                ushort wordWheight = ushort.Parse(a[1]);
 
-                int type = -1;
-
-                ulong _unique;
-                ulong _pointer;
-                string unique = "";
-                string pointer = "";
-                string wheight = "";
-                string word = "";
-                int pointerIndex = 0;
-                List<string> pointerUnique = new List<string>();
-                List<string> pointerWheight = new List<string>();
-
-                for (int i = 0; i < line.Length; i++)
+                // walking the word
+                string concat = "";
+                int ind = 0;
+                foreach (char c in content)
                 {
-                    char c = line[i];
-
-                    if (c == '<')
-                    { type = 2; break; }
-                    else if (c == '~')
-                    { type = 1; continue; }
-                    else if (c == '[')
-                    {isReading = true; continue; }
-                    else if (c == ']')
-                    {isReading = false; continue; }
-                    else if (c == '(')
-                    { isUnique = true; isReading = false; continue; }
-                    else if (c == ')')
-                    { isUnique = false; isReading = false; continue; }
-                    else if (c == '>')
-                    { isPointer = true; isReading = false; continue; }
-                    else if (c == '^')
-                    { isWheight = true; isPointer = false; continue; }
+                    if (c == '(')
+                    {
+                        break;
+                    }
                     else
                     {
-                        if (isReading) word += c;
-                        else if (isUnique) unique += c;
-                        else if (isPointer)
+                        concat += c;
+                    }
+                    ind++;
+                }
+                word curWord = new word(concat, wordUnique);
+                // concat = "";
+
+                // walking the pointers
+                string content2 = content.Replace($"({wordUnique}^{wordWheight})", "");
+                bool isPointer = false;
+                string curPointer = "";
+                string curWheight = "";
+                int pointerDepth = 0;
+                List<pointer> pointers = new List<pointer>();
+                
+                for (int i = ind - 1; i < content2.Length; i++)
+                {
+                    char c = content2[i];
+                    if (i == ind - 1)
+                    {
+                        if (c == '<')
                         {
-                            pointer += c;
+                            curWord.type = 2;
+                            break;
                         }
-                        else if (isWheight)
+                        else if (c == '~')
                         {
-                            wheight += c;
-                            if (pointerIndex > 0)
+                            curWord.type = 1;
+                        }
+                        else
+                        {
+                            curWord.type = 0;
+                        }
+                    }
+                    else
+                    {
+                        if (c == '>')
+                        {
+                            isPointer = true;
+                            if (pointerDepth > 0)
                             {
-                                _pointer = ulong.Parse(pointer);
+                                pointers.Add(new pointer(uint.Parse(curPointer), ushort.Parse(curWheight)));
+                                curPointer = "";
+                                curWheight = "";
+                                pointerDepth++;
                             }
-                            pointerIndex++;
+                        }
+                        else if (c == '^')
+                        {
+                            isPointer = false;
+                        }
+                        else if (nums.Contains(c))
+                        {
+                            if (isPointer)
+                            {
+                                curPointer += c;
+                            }
+                            else
+                            {
+                                curWheight += c;
+                            }
                         }
                     }
                 }
-                _unique = ulong.Parse(unique);
             }
 
             return output.ToArray();
