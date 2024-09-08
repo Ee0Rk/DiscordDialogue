@@ -184,8 +184,18 @@ namespace DiscordDialogue
             var deserializer = new YamlDotNet.Serialization.DeserializerBuilder()
             .WithNamingConvention(CamelCaseNamingConvention.Instance)
             .Build();
-            dynamic cfg = deserializer.Deserialize<ExpandoObject>(File.ReadAllText($@"data\guilds\{sckgld.Id}\properties.yaml"));
-            dynamic _cfg = deserializer.Deserialize<ExpandoObject>(File.ReadAllText($@"data\cfgTemplate.yaml"));
+            string template = File.ReadAllText($@"data\cfgTemplate.yaml");
+            dynamic cfg;
+            dynamic _cfg = deserializer.Deserialize<ExpandoObject>(template);
+            try
+            {
+                cfg = deserializer.Deserialize<ExpandoObject>(File.ReadAllText($@"data\guilds\{sckgld.Id}\properties.yaml"));
+            }
+            catch
+            {
+                File.WriteAllText($@"data\guilds\{sckgld.Id}\properties.yaml", template);
+                cfg = deserializer.Deserialize<ExpandoObject>(template);
+            }
             try
             {
                 this.targetChannel = ulong.Parse(cfg.channel);
@@ -325,22 +335,28 @@ namespace DiscordDialogue
             char[] delimitors = ((List<object>)Program.cfg.delimitors).OfType<char>().ToArray();
             List<word> words = new List<word>();
             uint indice = 0;
+            uint _line = 0;
             foreach (string line in data)
             {
                 foreach (string _word in line.Split(delimitors))
                 {
                     words.Add(new word(_word, indice));
                     indice++;
+                    Console.CursorLeft = 0;
+                    Console.CursorTop = 0;
+                    Console.Write($"Adding words I{indice} | L{_line} | A{data.Length} ");
                 }
+                _line++;
             }
-            var duplicates = words
-                .GroupBy(item => item.text)
-                .Where(group => group.Count() > 1)
-                .SelectMany(group => group.Skip(1))
-                .ToArray();
-            foreach (var duplicate in duplicates)
-            { words.Remove(duplicate); }
-            foreach (string line in data)
+
+            Console.Write("Removing duplicates ");
+            words = words.GroupBy(item => item.text)
+                         .SelectMany(group => group.Distinct())
+                         .ToList();
+
+
+            _line = 0;
+            /*foreach (string line in data)
             {
                 string[] _w = line.Split(delimitors);
                 if (_w.Length > 3)
@@ -369,8 +385,40 @@ namespace DiscordDialogue
                         {
                             words.Find(item => item.text == curWord).type = 2;
                         }
+                        Console.CursorLeft = 0;
+                        Console.CursorTop = 0;
+                        Console.Write($"Deserializing I{i} | L{_line} | A{data.Length} ");
                     }
                 }
+                _line++;
+            }*/
+            Dictionary<string, word> wordDictionary = words.ToDictionary(item => item.text);
+            foreach (string line in data)
+            {
+                string[] _w = line.Split(delimitors);
+                if (_w.Length > 3)
+                {
+                    int maxInd = _w.Length - 1;
+                    for (int i = 0; i < _w.Length; i++)
+                    {
+                        string curWord = _w[i];
+                        string nextWord = (i != maxInd) ? _w[i + 1] : null;
+
+                        word curWordObj = wordDictionary[curWord];
+                        curWordObj.type = (i == (byte)0) ? (byte)1 : (i == maxInd) ? (byte)2 : (byte)0;
+
+                        if (nextWord != null)
+                        {
+                            word nextWordObj = wordDictionary[nextWord];
+                            curWordObj.addPointer(nextWordObj.unique);
+                        }
+
+                        Console.CursorLeft = 0;
+                        Console.CursorTop = 0;
+                        Console.Write($"Deserializing I{i} | L{_line} | A{data.Length} ");
+                    }
+                }
+                _line++;
             }
             return words.ToArray();
         }
